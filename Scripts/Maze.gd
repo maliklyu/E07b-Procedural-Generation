@@ -13,8 +13,8 @@ var cell_walls = {
 }
 
 var tile_size = 64
-var width = 20
-var height = 12
+var width = 25
+var height = 15
 
 onready var Map = $TileMap
 
@@ -25,7 +25,36 @@ func _ready():
 
 
 func check_neighbors(cell, unvisited):
-	pass
-
+	# return an array of cell's unvisited neighbors
+	var list = []
+	for n in cell_walls.keys():
+		if cell + n in unvisited:
+			list.append(cell + n)
 func make_maze():
-	pass
+	var unvisited = [] # array of unvisited tiles
+	var stack = []
+	# fill the map with solid tiles
+	Map.clear()
+	for x in range(width):
+		for y in range(height):
+			unvisited.append(Vector2(x, y))
+			Map.set_cellv(Vector2(x, y), N|E|S|W)
+	var current = Vector2(0, 0)
+	unvisited.erase(current)
+	# execute recursive backtracker algorithm
+	while unvisited:
+		var neighbors = check_neighbors(current, unvisited)
+		if neighbors.size() > 0:
+			var next = neighbors[randi() % neighbors.size()]
+			stack.append(current)
+			# remove walls from *both* cells
+			var dir = next - current
+			var current_walls = Map.get_cellv(next) - cell_walls[dir]
+			var next_walls = Map.get_cellv(next) - cell_walls[-dir]
+			Map.set_cellv(current, current_walls)
+			Map.set_cellv(next, next_walls)
+			current = next
+			unvisited.erase(current)
+		elif stack:
+			current = stack.pop_back()
+		yield(get_tree(), 'idle_frame')
